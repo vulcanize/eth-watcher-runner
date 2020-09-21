@@ -33,7 +33,7 @@ def main():
     print('Starting geth node')
     system('docker-compose up -d dapptools indexer-db contact-watcher-db eth-indexer eth-server')
     print('Waiting 60 sec')
-    time.sleep(1)
+    time.sleep(60)
 
     process = subprocess.Popen(['docker-compose', 'ps', '-q', 'dapptools'],
                                stdout=subprocess.PIPE,
@@ -76,7 +76,7 @@ def main():
         # get contract ABI
         out, _ = exec_geth(f'cat /tmp/out/{config_contract[contract]["name"]}.abi')
         abi = out.rstrip()
-        print(f'ABI is {abi}')
+        # print(f'ABI is {abi}')
         addresses.append({'address': contract_address, 'abi': abi})
 
     print('writing contract-watcher config')

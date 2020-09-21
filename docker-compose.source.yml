@@ -27,6 +27,7 @@ services:
       VDB_COMMAND: sync
 
   eth-server:
+    restart: unless-stopped
     depends_on:
       - indexer-db
       - eth-indexer
@@ -110,7 +111,7 @@ services:
       - PG_DATABASE=vulcanize_public
       - PG_USER=vdbm
       - PG_PASSWORD=password
-      - SCHEMA=public,%%ADRESSES%%
+      - SCHEMA=public
     ports:
     - "127.0.0.1:5000:5000"
 

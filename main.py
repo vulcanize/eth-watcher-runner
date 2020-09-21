@@ -31,9 +31,9 @@ def main():
     contract_watcher_config = toml.load('environments/contract-watcher.example.toml')
 
     print('Starting geth node')
-    system('docker-compose up -d dapptools indexer-db contact-watcher-db eth-indexer eth-server')
-    print('Waiting 60 sec')
-    time.sleep(60)
+    system('docker-compose up -d dapptools indexer-db contact-watcher-db eth-indexer eth-server eth-header-sync')
+    print('Waiting 100 sec')
+    time.sleep(100)
 
     process = subprocess.Popen(['docker-compose', 'ps', '-q', 'dapptools'],
                                stdout=subprocess.PIPE,
@@ -73,6 +73,9 @@ def main():
         contract_address = out.rstrip()
         print(f'Contract {contract} address is {contract_address}')
 
+        # update docker-compose for postgraphile (add schema)
+        system(f"sed -i 's/SCHEMA=public/SCHEMA=public,header_{contract_address.lower()}/' docker-compose.yml")
+
         # get contract ABI
         out, _ = exec_geth(f'cat /tmp/out/{config_contract[contract]["name"]}.abi')
         abi = out.rstrip()
@@ -92,7 +95,10 @@ def main():
     with open('environments/example.toml', 'w') as f:
         toml.dump(contract_watcher_config, f)
 
+    # run contract watcher
     system('docker-compose up -d eth-contract-watcher')
+    # time.sleep(10)
+    # system('docker-compose up -d contract-watcher-graphql')
 
 
 def exec_geth(command: str):

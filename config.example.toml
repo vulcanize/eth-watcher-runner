@@ -1,0 +1,11 @@
+[contract]
+    # file names without .sol extention
+    contracts  = [
+        "Test",
+    ]
+    [contract.Test]
+        # contract name
+        name = "Test"
+        # constuctor parameters
+#        paremeters = [1, 2, 3]
+

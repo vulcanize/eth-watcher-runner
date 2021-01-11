@@ -6,6 +6,8 @@ from os import path, system
 import subprocess
 import toml
 from collections import OrderedDict
+import time
+import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("path", help="path to directory with smart contracts",
@@ -31,9 +33,10 @@ def main():
     contract_watcher_config = toml.load('environments/contract-watcher.example.toml')
 
     print('Starting geth node')
-    system('docker-compose up -d dapptools indexer-db contact-watcher-db eth-indexer eth-server eth-header-sync')
+    system('docker-compose up -d dapptools indexer-db contact-watcher-db statediff-migrations indexer-graphql')
     print('Waiting 100 sec')
-    time.sleep(100)
+    time.sleep(10)
+    system('docker-compose up -d eth-watcher-ts')
 
     process = subprocess.Popen(['docker-compose', 'ps', '-q', 'dapptools'],
                                stdout=subprocess.PIPE,
@@ -66,40 +69,44 @@ def main():
 
     addresses = []
     for contract in contracts:
-        _, contract_file_name = path.split(contract)
+        print(
+            f'Copying contract "{contract}" to dapptool container ...')
+        exec_geth('rm -rf /tmp/src && mkdir -p /tmp/src')
+        cp_geth(path.join(dir_path, contract + '.sol'), contract + '.sol')
+
+        print(f'Building contracts {contract}...')
+        exec_geth('cd /tmp && dapp build --extract')
 
         print(f'Deploying contract {contract}...')
-        out, _ = exec_geth(f'cd /tmp && ETH_FROM={coinbase} ETH_RPC_ACCOUNTS=1 SETH_VERBOSE=1 ETH_GAS=0xffffff dapp create ' + config_contract[contract]['name'])
+
+        ts = int(time.time()) + 20
+        print(f'Current timestamp is {ts}')
+
+        out, _ = exec_geth(
+            f'cd /tmp && ETH_FROM={coinbase} ETH_RPC_ACCOUNTS=1 SETH_VERBOSE=1 ETH_GAS=0xffffff dapp create {config_contract[contract]["name"]}')
         contract_address = out.rstrip()
         print(f'Contract {contract} address is {contract_address}')
 
-        # update docker-compose for postgraphile (add schema)
-        system(f"sed -i 's/SCHEMA=public/SCHEMA=public,header_{contract_address.lower()}/' docker-compose.yml")
-
         # get contract ABI
-        out, _ = exec_geth(f'cat /tmp/out/{config_contract[contract]["name"]}.abi')
+        out, _ = exec_geth(
+            f'cat /tmp/out/{config_contract[contract]["name"]}.abi')
         abi = out.rstrip()
         # print(f'ABI is {abi}')
-        addresses.append({'address': contract_address, 'abi': abi})
 
-    print('writing contract-watcher config')
-    addrs = []
-    for i in addresses:
-        addrs.append(i['address'])
-        contract_watcher_config['contract'][i['address']] = OrderedDict()
-        contract_watcher_config['contract'][i['address']]['abi'] = i['abi']
-        contract_watcher_config['contract'][i['address']]['startingBlock'] = 0
-
-    contract_watcher_config['contract']['addresses'] = addrs
-
-    with open('environments/example.toml', 'w') as f:
-        toml.dump(contract_watcher_config, f)
-
-    # run contract watcher
-    system('docker-compose up -d eth-contract-watcher')
-    # time.sleep(10)
-    # system('docker-compose up -d contract-watcher-graphql')
-
+        print(f'writing config for {contract}...')
+        # events
+        # TODO get from config
+        system("docker-compose exec contact-watcher-db sh -c \"psql -U vdbm -d vulcanize_public -c \\\"INSERT INTO "
+               "contract.events(name) VALUES ('MessageChanged') ON CONFLICT DO NOTHING;\\\"\"")
+        # contract
+        fp = tempfile.NamedTemporaryFile(suffix='.sql')
+        fp.write(b"INSERT INTO contract.contracts (name, address, abi, events, starting_block) VALUES ('" +
+                 str.encode(contract) + b"', '" + str.encode(contract_address) + b"', '" +
+                 str.encode(abi) + b"', '{1}', 1);")
+        system(
+            f'docker cp "{fp.name}" $(docker-compose ps -q contact-watcher-db):/tmp/contract.sql')
+        system(
+            "docker-compose exec contact-watcher-db sh -c \"psql -U vdbm -d vulcanize_public < /tmp/contract.sql\"")
 
 def exec_geth(command: str):
     command_list = ['sh', '-c', command]

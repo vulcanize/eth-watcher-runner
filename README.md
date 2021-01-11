@@ -28,10 +28,7 @@ pip install -r requirements.txt
 ```
 cp config.example.toml config.toml
 ```
-* Copy docker-compose file
-```
-cp docker-compose.source.yml docker-compose.yml
-```
+
 * Run script
 
 ```
@@ -89,10 +86,4 @@ ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)'
 
 ```
 
-* Run postgraphile service
-
-```
-docker-compose up -d contract-watcher-graphql
-```
-
-and open in browser http://127.0.0.1:5000/graphiql and perform graphql query
+* Get postgraphile service: open in browser http://127.0.0.1:5101/graphiql and perform graphql query

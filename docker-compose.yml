@@ -1,0 +1,94 @@
+version: '3.2'
+
+services:
+  dapptools:
+    restart: unless-stopped
+    depends_on:
+      - statediff-migrations
+    image: vulcanize/dapptools:v0.29.0-statediff-0.0.4
+    environment:
+      DB_USER: vdbm
+      DB_NAME: vulcanize_public
+      DB_HOST: indexer-db
+      DB_PORT: 5432
+      DB_PASSWORD: password
+    ports:
+      - "127.0.0.1:8545:8545"
+      - "127.0.0.1:8546:8546"
+
+  statediff-migrations:
+    restart: on-failure
+    depends_on:
+      - indexer-db
+    image: vulcanize/statediff-migrations:v0.1.0
+    environment:
+      DATABASE_USER: vdbm
+      DATABASE_NAME: vulcanize_public
+      DATABASE_HOSTNAME: indexer-db
+      DATABASE_PORT: 5432
+      DATABASE_PASSWORD: password
+
+  indexer-db:
+    restart: unless-stopped
+    image: postgres:10.12-alpine
+    environment:
+      - POSTGRES_USER=vdbm
+      - POSTGRES_DB=vulcanize_public
+      - POSTGRES_PASSWORD=password
+    volumes:
+    - indexer_db_data:/var/lib/postgresql/data
+    ports:
+    - "0.0.0.0:8069:5432"
+
+  contact-watcher-db:
+    restart: unless-stopped
+    image: postgres:10.12-alpine
+    environment:
+      - POSTGRES_USER=vdbm
+      - POSTGRES_DB=vulcanize_public
+      - POSTGRES_PASSWORD=password
+    volumes:
+    - contact_watcher_db_data:/var/lib/postgresql/data
+    ports:
+    - "127.0.0.1:8068:5432"
+
+
+  eth-watcher-ts:
+    depends_on:
+    - contact-watcher-db
+    image: vulcanize/eth-watcher-ts:v0.0.6-beta
+    command: ["sh", "-c", "npm run migrate:up && npm run dev"]
+    environment:
+      DATABASE_NAME: vulcanize_public
+      DATABASE_HOSTNAME: contact-watcher-db
+      DATABASE_PORT: 5432
+      DATABASE_USER: vdbm
+      DATABASE_PASSWORD: password
+      NODE_ENV: development
+      GRAPHQL_URI: "http://indexer-graphql:5000"
+      ENABLE_HEADER_WATCHER: "true"
+      ENABLE_EVENT_WATCHER: "true"
+      GRAPHQL_SERVER_ENABLE: "true"
+      GRAPHQL_SERVER_PORT: "5101"
+      GRAPHQL_SERVER_ADDR: "0.0.0.0"
+    ports:
+      - "127.0.0.1:5101:5101"
+
+  indexer-graphql:
+    restart: unless-stopped
+    depends_on:
+    - contact-watcher-db
+    image: vulcanize/postgraphile:v1.0.1
+    environment:
+      - PG_HOST=indexer-db
+      - PG_PORT=5432
+      - PG_DATABASE=vulcanize_public
+      - PG_USER=vdbm
+      - PG_PASSWORD=password
+      - SCHEMA=public,eth
+    ports:
+    - "127.0.0.1:5000:5000"
+
+volumes:
+  contact_watcher_db_data:
+  indexer_db_data:

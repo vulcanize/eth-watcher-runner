@@ -99,12 +99,14 @@ def main():
         system("docker-compose exec contact-watcher-db sh -c \"psql -U vdbm -d vulcanize_public -c \\\"INSERT INTO "
                "contract.events(name) VALUES ('MessageChanged') ON CONFLICT DO NOTHING;\\\"\"")
         # contract
-        fp = tempfile.NamedTemporaryFile(suffix='.sql')
-        fp.write(b"INSERT INTO contract.contracts (name, address, abi, events, starting_block) VALUES ('" +
-                 str.encode(contract) + b"', '" + str.encode(contract_address) + b"', '" +
-                 str.encode(abi) + b"', '{1}', 1);")
+        f = open("a.sql", "w")
+        f.write(str("INSERT INTO contract.contracts (name, address, abi, events, starting_block) VALUES ('" +
+                 contract + "', '" + contract_address + "', '" +
+                 abi + "', '{1}', 1);"))
+        f.close()
+        system(f'cat {f.name}')
         system(
-            f'docker cp "{fp.name}" $(docker-compose ps -q contact-watcher-db):/tmp/contract.sql')
+            f'docker cp "{f.name}" $(docker-compose ps -q contact-watcher-db):/tmp/contract.sql')
         system(
             "docker-compose exec contact-watcher-db sh -c \"psql -U vdbm -d vulcanize_public < /tmp/contract.sql\"")
 

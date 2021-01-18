@@ -32,11 +32,13 @@ def main():
 
     contract_watcher_config = toml.load('environments/contract-watcher.example.toml')
 
-    print('Starting geth node')
+    print('Starting services')
+    system('docker-compose pull dapptools indexer-db contact-watcher-db statediff-migrations indexer-graphql eth-watcher-ts')
     system('docker-compose up -d dapptools indexer-db contact-watcher-db statediff-migrations indexer-graphql')
-    print('Waiting 100 sec')
+    print('Waiting 20 sec')
     time.sleep(10)
     system('docker-compose up -d eth-watcher-ts')
+    time.sleep(10)
 
     process = subprocess.Popen(['docker-compose', 'ps', '-q', 'dapptools'],
                                stdout=subprocess.PIPE,
@@ -98,11 +100,13 @@ def main():
         # TODO get from config
         system("docker-compose exec contact-watcher-db sh -c \"psql -U vdbm -d vulcanize_public -c \\\"INSERT INTO "
                "contract.events(name) VALUES ('MessageChanged') ON CONFLICT DO NOTHING;\\\"\"")
-        # contract
-        fp = tempfile.NamedTemporaryFile(suffix='.sql')
-        fp.write(b"INSERT INTO contract.contracts (name, address, abi, events, starting_block) VALUES ('" +
-                 str.encode(contract) + b"', '" + str.encode(contract_address) + b"', '" +
-                 str.encode(abi) + b"', '{1}', 1);")
+        # copy sql file
+        fp = open("a.sql", "w")
+        fp.write(str("INSERT INTO contract.contracts (name, address, abi, events, starting_block) VALUES ('" +
+                         contract + "', '" + contract_address + "', '" +
+                         abi + "', '{1}', 1);"))
+        fp.close()
+        system(f'cat {fp.name}')
         system(
             f'docker cp "{fp.name}" $(docker-compose ps -q contact-watcher-db):/tmp/contract.sql')
         system(

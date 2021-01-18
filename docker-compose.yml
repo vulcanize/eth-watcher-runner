@@ -52,11 +52,16 @@ services:
     ports:
     - "127.0.0.1:8068:5432"
 
+  eth-watcher-ts-browser:
+    image: vulcanize/eth-watcher-ts:v0.0.7-beta
+    command: ["sh", "-c", "npm run build-browser-lib && npm run static-serve"]
+    ports:
+      - "127.0.0.1:3000:3000"
 
   eth-watcher-ts:
     depends_on:
     - contact-watcher-db
-    image: vulcanize/eth-watcher-ts:v0.0.6-beta
+    image: vulcanize/eth-watcher-ts:v0.0.7-beta
     command: ["sh", "-c", "npm run migrate:up && npm run dev"]
     environment:
       DATABASE_NAME: vulcanize_public
@@ -88,6 +93,7 @@ services:
       - SCHEMA=public,eth
     ports:
     - "127.0.0.1:5000:5000"
+    - "127.0.0.1:5020:5000"
 
 volumes:
   contact_watcher_db_data:

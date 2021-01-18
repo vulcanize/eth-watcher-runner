@@ -9,6 +9,13 @@ deploy smart contract and automatically configure config
 * docker-compose
 * python v3
 
+### Upgrade from previous version
+
+Remove existing images and volumes:
+```
+docker-compose down -v
+```
+
 ### Setup
 
 * Initialize and activate Python venv:
@@ -87,3 +94,24 @@ ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)'
 ```
 
 * Get postgraphile service: open in browser http://127.0.0.1:5101/graphiql and perform graphql query
+
+
+### Query data from watcher graphql
+
+Open in browser `http://127.0.0.1:5101/graphiql` GraphQL interface from eth-watcher-ts and execute query:
+
+```
+query MyQuery {
+  allContractId1EventId1S {
+    nodes {
+      contractId
+      dataMessage
+      eventId
+      id
+      mhKey
+    }
+  }
+}
+``` 
+
+and you will get all contract event data

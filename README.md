@@ -98,6 +98,12 @@ ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)'
 
 ### Query data from watcher graphql
 
+**Note:** you need to restart `eth-watcher-ts` service first. Because postgraphile cache database schema. 
+
+```
+docker-compose restart eth-watcher-ts
+```
+
 Open in browser `http://127.0.0.1:5101/graphiql` GraphQL interface from eth-watcher-ts and execute query:
 
 ```

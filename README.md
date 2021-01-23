@@ -65,6 +65,9 @@ docker-compose exec dapptools sh
 
 * Save coinbase address and contract address
 
+You can obtain these addresses from the output of the previous command (python main.py contracts).
+
+For example:
 ```
 export ETH_FROM="0xfedb5c1d17eba6182a69ab2156ee4c13adf854e4"
 export CONTRACT_ADDRESS="0xA18AFFF4D4f753De1bA3858b7A179eE9165C72A5"

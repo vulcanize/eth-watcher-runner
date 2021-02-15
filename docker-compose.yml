@@ -14,7 +14,7 @@ services:
       DB_PASSWORD: password
     ports:
       - "127.0.0.1:8545:8545"
-      - "127.0.0.1:8546:8546"
+#      - "127.0.0.1:8546:8546"
 
   statediff-migrations:
     restart: on-failure
@@ -62,6 +62,7 @@ services:
     depends_on:
     - contact-watcher-db
     - indexer-graphql
+    - dapptools
     image: vulcanize/eth-watcher-ts:v0.0.8-beta
     command: ["sh", "-c", "npm run migrate:up && npm run dev"]
     environment:

@@ -35,9 +35,12 @@ def main():
     print('Starting services')
     system('docker-compose pull dapptools indexer-db contact-watcher-db statediff-migrations indexer-graphql eth-watcher-ts')
     system('docker-compose up -d dapptools indexer-db contact-watcher-db statediff-migrations indexer-graphql')
+    print('Waiting for geth service to be up and running')
+    system('while [ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:8545)" != "200" ]; do echo "waiting..." && sleep 5; done')
+
     print('Waiting for eht-watcher-ts service to be up and running')
     system('docker-compose up -d eth-watcher-ts')
-    system('while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:3001/v1/healthz)" != "200" ]]; do echo "waiting..." && sleep 5; done')
+    system('while [ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:3001/v1/healthz)" != "200" ]; do echo "waiting..." && sleep 5; done')
 
     process = subprocess.Popen(['docker-compose', 'ps', '-q', 'dapptools'],
                                stdout=subprocess.PIPE,

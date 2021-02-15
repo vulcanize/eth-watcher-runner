@@ -14,7 +14,7 @@ services:
       DB_PASSWORD: password
     ports:
       - "127.0.0.1:8545:8545"
-      - "127.0.0.1:8546:8546"
+#      - "127.0.0.1:8546:8546"
 
   statediff-migrations:
     restart: on-failure
@@ -53,7 +53,7 @@ services:
     - "127.0.0.1:8068:5432"
 
   eth-watcher-ts-browser:
-    image: vulcanize/eth-watcher-ts:v0.0.7-beta
+    image: vulcanize/eth-watcher-ts:v0.0.8-beta
     command: ["sh", "-c", "npm run build-browser-lib && npm run static-serve"]
     ports:
       - "127.0.0.1:3000:3000"
@@ -61,7 +61,9 @@ services:
   eth-watcher-ts:
     depends_on:
     - contact-watcher-db
-    image: vulcanize/eth-watcher-ts:v0.0.7-beta
+    - indexer-graphql
+    - dapptools
+    image: vulcanize/eth-watcher-ts:v0.0.8-beta
     command: ["sh", "-c", "npm run migrate:up && npm run dev"]
     environment:
       DATABASE_NAME: vulcanize_public
@@ -76,13 +78,16 @@ services:
       GRAPHQL_SERVER_ENABLE: "true"
       GRAPHQL_SERVER_PORT: "5101"
       GRAPHQL_SERVER_ADDR: "0.0.0.0"
+      HTTP_ENABLE: "true"
+      HTTP_ADDR: "0.0.0.0"
     ports:
       - "127.0.0.1:5101:5101"
+      - "127.0.0.1:3001:3000"
 
   indexer-graphql:
     restart: unless-stopped
     depends_on:
-    - contact-watcher-db
+    - indexer-db
     image: vulcanize/postgraphile:v1.0.1
     environment:
       - PG_HOST=indexer-db
@@ -90,7 +95,7 @@ services:
       - PG_DATABASE=vulcanize_public
       - PG_USER=vdbm
       - PG_PASSWORD=password
-      - SCHEMA=public,eth
+      - SCHEMA=public,eth,trace
     ports:
     - "127.0.0.1:5000:5000"
     - "127.0.0.1:5020:5000"

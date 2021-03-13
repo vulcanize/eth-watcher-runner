@@ -76,7 +76,7 @@ export CONTRACT_ADDRESS="0xA18AFFF4D4f753De1bA3858b7A179eE9165C72A5"
 * Call smart contract function
 
 ```
-ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc1"'
+ETH_RPC_ACCOUNTS=1 seth send --gas 0xffffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc1"'
 ```
 
 You will see something similar to 
@@ -91,8 +91,8 @@ seth-send: Transaction included in block 4.
 * Call function a couple more times with another parameter:
 
 ```
-ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc2"'
-ETH_RPC_ACCOUNTS=1 seth send --gas 0xffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc3"'
+ETH_RPC_ACCOUNTS=1 seth send --gas 0xffffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc2"'
+ETH_RPC_ACCOUNTS=1 seth send --gas 0xffffff $CONTRACT_ADDRESS 'setMessage(string)' '"abc3"'
 
 ```
 

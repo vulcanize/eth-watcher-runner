@@ -123,4 +123,21 @@ query MyQuery {
 }
 ``` 
 
-and you will get all contract event data
+and you will get all contract event data.
+
+To subscribe to new events execute following code:
+
+```
+subscription SubscriptionEvents {
+  listen(topic: "events") {
+    relatedNode {
+      ... on ContractId1EventId1 {
+        eventId
+        mhKey
+        id
+        headerId
+      }
+    }
+  }
+}
+```
